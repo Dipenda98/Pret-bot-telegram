@@ -3,6 +3,7 @@ from telegram.ext import (ApplicationBuilder, CommandHandler, MessageHandler,
                           ConversationHandler, ContextTypes, filters)
 from config import BOT_TOKEN, ADMIN_CHAT_ID
 from utils import calcul_frais_entretien, calcul_duree_remboursement
+import os
 
 CHOIX_MONTANT, INFOS_PERSO, PAIEMENT = range(3)
 
@@ -95,7 +96,10 @@ async def annuler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Opération annulée.", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
-def main():
+async def main():
+    from telegram.ext import ApplicationBuilder
+    from telegram.ext import ConversationHandler
+
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     conv = ConversationHandler(
@@ -111,7 +115,13 @@ def main():
     )
 
     app.add_handler(conv)
-    app.run_polling()
 
-if __name__ == "__main__":
-    main()
+    # Configuration du webhook
+    port = int(os.environ.get('PORT', 8443))
+    webhook_url = os.environ.get("WEBHOOK_URL")
+    await app.bot.set_webhook(url=webhook_url)
+    await app.run_webhook(listen="0.0.0.0", port=port, webhook_url=webhook_url)
+
+if __name__ == '__main__':
+    import asyncio
+    asyncio.run(main())
